@@ -463,6 +463,10 @@ socket.on('chat-message', ({ id, name, text, timestamp }) => {
 	$('messages').scrollTop = $('messages').scrollHeight;
 	if (id !== socket.id && !$('chat-panel').classList.contains('open')) showMeetingToast(`${name}: ${text}`, 'chat');
 });
+socket.on('reaction', ({ id, name, reaction }) => {
+	if (id === socket.id) return;
+	showMeetingToast(`${reaction} ${name || 'Someone'} reacted`);
+});
 socket.on('recording-started', () => { $('record-button').classList.add('active'); document.querySelector('#record-button small').textContent = 'Stop'; showMeetingError('Recording started'); });
 socket.on('recording-stopped', () => { $('record-button').classList.remove('active'); document.querySelector('#record-button small').textContent = 'Record'; showMeetingError('Recording stopped'); });
 socket.on('file-share-pending', ({ from, fromName, filename, size }) => {
@@ -736,6 +740,37 @@ function setUtilityPanelOpen(isOpen) {
 }
 $('more-button').addEventListener('click', () => setUtilityPanelOpen(utilityPanel.classList.contains('hidden')));
 $('close-utility').addEventListener('click', () => setUtilityPanelOpen(false));
+
+function setAudioOnlyMode(enabled) {
+	const track = localStream?.getVideoTracks()[0];
+	if (!track) return showMeetingToast('Camera is not available.', 'error');
+	track.enabled = !enabled;
+	$('camera-button').classList.toggle('muted', enabled);
+	document.querySelector('#camera-button small').textContent = enabled ? 'Video off' : 'Camera';
+	publishMediaState();
+}
+
+$('reactions-button').addEventListener('click', () => $('reaction-picker').classList.toggle('hidden'));
+document.querySelectorAll('#reaction-picker [data-reaction]').forEach((button) => button.addEventListener('click', () => {
+		const reaction = button.dataset.reaction;
+		socket.emit('reaction', reaction);
+		$('reaction-picker').classList.add('hidden');
+	}));
+$('captions-button').addEventListener('click', () => {
+		const captions = $('captions-toggle');
+		captions.checked = !captions.checked;
+		captions.dispatchEvent(new Event('change'));
+});
+$('audio-button').addEventListener('click', () => {
+		$('audioOutputSelect').focus();
+		showMeetingToast('Choose your speaker in Audio settings.');
+});
+$('on-go-button').addEventListener('click', () => {
+		const enabled = !$('camera-button').classList.contains('muted');
+		setAudioOnlyMode(enabled);
+		showMeetingToast(enabled ? 'On the go mode enabled.' : 'Video mode restored.');
+});
+$('tools-button').addEventListener('click', () => showMeetingToast('Polls, Q&A, whiteboard, and notes are coming soon.'));
 
 async function getAudioDevices() {
 		const select = $('audioOutputSelect');

@@ -75,29 +75,40 @@
 				<div id="file-requests" class="file-list"></div>
 				<div id="active-transfers" class="file-list"></div>
 			</aside>
-			<aside id="utility-panel" class="utility-panel hidden">
-				<div class="chat-header"><div><p class="eyebrow">MEETING TOOLS</p><h2>More options</h2></div><button id="close-utility" class="icon-button" type="button" aria-label="Close meeting tools">&#10005;</button></div>
+			<aside id="utility-panel" class="utility-panel hidden" aria-label="More meeting controls">
+				<div class="more-sheet-header"><div><p class="eyebrow">GATHER MEETING</p><h2>More</h2></div><button id="close-utility" class="icon-button" type="button" aria-label="Close more options">&#10005;</button></div>
+				<div class="more-grid">
+					<button id="hand-button" class="more-tile" type="button"><span class="more-icon">&#9995;</span><strong>Raise hand</strong></button>
+					<button id="share-button" class="more-tile" type="button"><span class="more-icon">&#8593;</span><strong>Present</strong></button>
+					<button id="captions-button" class="more-tile" type="button"><span class="more-icon">CC</span><strong>Captions</strong></button>
+					<button id="audio-button" class="more-tile" type="button"><span class="more-icon">&#128266;</span><strong>Audio</strong></button>
+					<button id="on-go-button" class="more-wide-tile" type="button"><span class="more-icon">&#128241;</span><strong>On the go</strong><small>Audio-only mode</small></button>
+					<button id="chat-button" class="more-wide-tile" type="button"><span class="more-icon">&#128172;</span><strong>Chat</strong></button>
+					<button id="settings-button" class="more-wide-tile" type="button"><span class="more-icon">&#9881;</span><strong>Settings</strong></button>
+					<button id="tools-button" class="more-tile" type="button"><span class="more-icon">&#9881;</span><strong>Tools</strong></button>
+					<button id="report-button" class="more-tile" type="button"><span class="more-icon">&#9888;</span><strong>Report abuse</strong></button>
+				</div>
+				<div class="more-secondary-actions">
+					<button id="switch-camera-button" class="secondary-button compact-button" type="button">Switch camera</button>
+					<button id="fullscreenBtn" class="secondary-button compact-button" type="button">Fullscreen</button>
+					<button id="record-button" class="secondary-button compact-button" type="button">Record</button>
+					<button id="host-button" class="secondary-button compact-button hidden" type="button">People</button>
+					<button id="file-button" class="secondary-button compact-button hidden" type="button">Files</button>
+				</div>
 				<section class="utility-section"><h3>Invite people</h3><p class="panel-hint">Send the meeting link by email.</p><div class="invite-row"><input id="invite-email" type="email" placeholder="name@example.com" autocomplete="email"><button id="email-invite-button" type="button">Send</button></div></section>
 				<section class="utility-section"><h3>Accessibility</h3><label class="setting-toggle"><input id="captions-toggle" type="checkbox"><span>Turn on captions (CC)</span></label></section>
 				<section class="utility-section"><h3>Video effects</h3><label for="video-effect-select">Camera effect</label><select id="video-effect-select"><option value="none">None</option><option value="soft-blur">Soft blur</option><option value="dim">Dim</option><option value="contrast">High contrast</option></select></section>
 				<section class="utility-section"><h3>Audio</h3><label for="audioOutputSelect">Speaker</label><select id="audioOutputSelect"><option value="">Default speaker</option></select><button id="refresh-audio-button" class="secondary-button compact-button" type="button">Refresh devices</button></section>
-				<section class="utility-section"><h3>Settings</h3><button id="settings-button" class="secondary-button compact-button" type="button">Open device settings</button><button id="report-button" class="secondary-button compact-button" type="button">Report a problem</button></section>
 				<section id="report-section" class="utility-section hidden"><label for="report-text">What went wrong?</label><textarea id="report-text" rows="3" maxlength="500" placeholder="Tell us what happened"></textarea><button id="send-report-button" class="primary-button compact-button" type="button">Send report</button></section>
 			</aside>
+			<div id="reaction-picker" class="reaction-picker hidden" aria-label="Reactions"><button type="button" data-reaction="&#128077;">&#128077;</button><button type="button" data-reaction="&#10084;&#65039;">&#10084;&#65039;</button><button type="button" data-reaction="&#128514;">&#128514;</button><button type="button" data-reaction="&#128558;">&#128558;</button><button type="button" data-reaction="&#128546;">&#128546;</button><button type="button" data-reaction="&#128079;">&#128079;</button><button type="button" data-reaction="&#127881;">&#127881;</button></div>
 			<div id="caption-display" class="caption-display hidden" aria-live="polite"></div>
 			<p id="meeting-error" class="meeting-error" role="alert"></p>
 		</section>
 		<footer class="controls">
-			<button id="mic-button" class="control-button" type="button"><span>&#127908;</span><small>Mute</small></button>
 			<button id="camera-button" class="control-button" type="button"><span>&#128249;</span><small>Camera</small></button>
-			<button id="switch-camera-button" class="control-button" type="button" title="Switch front or back camera"><span>&#128260;</span><small>Flip camera</small></button>
-			<button id="hand-button" class="control-button" type="button"><span>&#9995;</span><small>Raise hand</small></button>
-			<button id="share-button" class="control-button" type="button"><span>&#8593;</span><small>Share screen</small></button>
-			<button id="chat-button" class="control-button" type="button"><span>&#9993;</span><small>Chat</small></button>
-			<button id="file-button" class="control-button hidden" type="button"><span>&#128451;</span><small>Files</small></button>
-			<button id="host-button" class="control-button hidden" type="button"><span>&#9881;</span><small>Host</small></button>
-			<button id="record-button" class="control-button" type="button"><span>&#9679;</span><small>Record</small></button>
-			<button id="fullscreenBtn" class="control-button" type="button" title="Toggle fullscreen"><span>&#x26F6;</span><small>Fullscreen</small></button>
+			<button id="mic-button" class="control-button" type="button"><span>&#127908;</span><small>Microphone</small></button>
+			<button id="reactions-button" class="control-button" type="button"><span>&#9786;</span><small>Reactions</small></button>
 			<button id="more-button" class="control-button" type="button" title="More meeting options"><span>&#8942;</span><small>More</small></button>
 			<button id="leave-button" class="control-button leave" type="button"><span>&#10140;</span><small>Leave</small></button>
 		</footer>

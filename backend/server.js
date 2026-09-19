@@ -139,6 +139,12 @@ io.on('connection', (socket) => {
 		io.to(roomId).emit('chat-message', { id: socket.id, name: socket.data.name || 'Guest', text: message, timestamp: Date.now() });
 	});
 
+	socket.on('reaction', (reaction) => {
+		const roomId = socket.data.roomId;
+		if (!roomId || typeof reaction !== 'string') return;
+		io.to(roomId).emit('reaction', { id: socket.id, name: socket.data.name || 'Guest', reaction: reaction.slice(0, 8) });
+	});
+
 	socket.on('report-problem', (text) => {
 		const report = typeof text === 'string' ? text.trim().slice(0, 500) : '';
 		if (!report || !socket.data.roomId) return;
