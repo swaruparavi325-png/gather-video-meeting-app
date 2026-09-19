@@ -20,6 +20,15 @@ let iceRestartInProgress = false;
 let isHeadphonesConnected = false;
 let cameraFacingMode = 'user';
 const raisedHandNotifications = new Map();
+const audioAnalyzers = new Map();
+let audioContext;
+let activeSpeakerId = null;
+let activeSpeakerCandidate = null;
+let activeSpeakerCandidateSince = 0;
+let activeSpeakerLastHeard = 0;
+let hideVideoTiles = false;
+let showOtherReactions = true;
+let animateReactions = true;
 
 const $ = (id) => document.getElementById(id);
 const joinScreen = $('join-screen');
@@ -46,6 +55,7 @@ function addVideo(id, name, stream, local = false) {
 	video.setAttribute('playsinline', '');
 	video.setAttribute('autoplay', '');
 	video.srcObject = stream;
+	tile.classList.toggle('presentation-tile', Boolean(local && screenStream));
 	applyAudioOutputPreference(video);
 	const playPreview = () => video.play().catch(() => {
 		if (!local) showMeetingError('Click anywhere in the meeting to enable participant audio.');
@@ -53,7 +63,79 @@ function addVideo(id, name, stream, local = false) {
 	video.onloadedmetadata = playPreview;
 	playPreview();
 	updateBadges(id);
+	setupAudioAnalyser(id, video, stream, local);
 	updateCount();
+}
+
+function setupAudioAnalyser(id, video, stream, local) {
+	if (audioAnalyzers.has(id) || !stream?.getAudioTracks?.().length) return;
+	try {
+		audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+		const source = local ? audioContext.createMediaStreamSource(stream) : audioContext.createMediaElementSource(video);
+		const analyser = audioContext.createAnalyser();
+		analyser.fftSize = 512;
+		source.connect(analyser);
+		if (!local) analyser.connect(audioContext.destination);
+		audioAnalyzers.set(id, { analyser, data: new Uint8Array(analyser.fftSize) });
+		if (!window.activeSpeakerLoopStarted) {
+			window.activeSpeakerLoopStarted = true;
+			requestAnimationFrame(updateActiveSpeaker);
+		}
+	} catch {
+		showMeetingToast('Active speaker detection is unavailable in this browser.', 'error');
+	}
+}
+
+function setActiveSpeaker(id) {
+	if (screenStream) return;
+	activeSpeakerId = id;
+	videoGrid.classList.toggle('active-speaker-mode', Boolean(id));
+	videoGrid.querySelectorAll('.video-tile').forEach((tile) => {
+		const tileId = tile.id.slice(5);
+		tile.classList.toggle('main-speaker', Boolean(id && tileId === id));
+		tile.classList.toggle('speaker-thumbnail', Boolean(id && tileId !== id));
+	});
+}
+
+function updateActiveSpeaker() {
+	if (!screenStream && audioAnalyzers.size) {
+		let loudestId = null;
+		let loudestLevel = 0;
+		for (const [id, entry] of audioAnalyzers) {
+			if (!document.getElementById(`tile-${id}`)) continue;
+			entry.analyser.getByteTimeDomainData(entry.data);
+			let sum = 0;
+			for (const value of entry.data) { const normalized = (value - 128) / 128; sum += normalized * normalized; }
+			const level = Math.sqrt(sum / entry.data.length);
+			if (level > loudestLevel) { loudestLevel = level; loudestId = id; }
+		}
+		const now = performance.now();
+		if (loudestId && loudestLevel > 0.045) {
+			activeSpeakerLastHeard = now;
+			if (activeSpeakerCandidate !== loudestId) { activeSpeakerCandidate = loudestId; activeSpeakerCandidateSince = now; }
+			if (now - activeSpeakerCandidateSince > 350) setActiveSpeaker(loudestId);
+		} else if (activeSpeakerId && now - activeSpeakerLastHeard > 900) {
+			activeSpeakerCandidate = null;
+			setActiveSpeaker(null);
+		}
+	}
+	requestAnimationFrame(updateActiveSpeaker);
+}
+
+function applyVideoTilePreference() {
+	videoGrid.classList.toggle('hide-video-tiles', hideVideoTiles);
+}
+
+function showFloatingReaction(reaction, name, own = false) {
+	if (!own && !showOtherReactions) return;
+	const layer = $('reaction-layer');
+	if (!layer) return;
+	const item = document.createElement('span');
+	item.className = `floating-reaction${animateReactions ? '' : ' static-reaction'}`;
+	item.textContent = reaction;
+	item.title = name || 'Reaction';
+	layer.appendChild(item);
+	window.setTimeout(() => item.remove(), animateReactions ? 2800 : 1800);
 }
 
 function updateBadges(id) {
@@ -235,7 +317,9 @@ function removePeer(id) {
 	const peer = peers.get(id);
 	if (peer) peer.connection.close();
 	peers.delete(id);
+	audioAnalyzers.delete(id);
 	document.getElementById(`tile-${id}`)?.remove();
+	if (activeSpeakerId === id) setActiveSpeaker(null);
 	updateCount();
 }
 
@@ -447,7 +531,10 @@ socket.on('mute-request', () => {
 });
 socket.on('removed-by-host', () => { localStream?.getTracks().forEach((track) => track.stop()); showMeetingError('The host removed you from the meeting.'); window.setTimeout(() => window.location.reload(), 1500); });
 socket.on('hand-raise', ({ id, raised }) => {
+	const participant = participants.get(id);
+	if (participant) participant.handRaised = raised;
 	document.querySelector(`#tile-${id} .hand-indicator`)?.classList.toggle('visible', raised);
+	if (raised) showMeetingToast(`${participant?.name || 'A participant'} raised their hand`, 'hand');
 });
 socket.on('hand-raised-notification', ({ id, name, raised }) => {
 	if (isHost && id !== socket.id) updateRaisedHandNotification(id, name, raised);
@@ -465,7 +552,7 @@ socket.on('chat-message', ({ id, name, text, timestamp }) => {
 });
 socket.on('reaction', ({ id, name, reaction }) => {
 	if (id === socket.id) return;
-	showMeetingToast(`${reaction} ${name || 'Someone'} reacted`);
+	showFloatingReaction(reaction, name);
 });
 socket.on('recording-started', () => { $('record-button').classList.add('active'); document.querySelector('#record-button small').textContent = 'Stop'; showMeetingError('Recording started'); });
 socket.on('recording-stopped', () => { $('record-button').classList.remove('active'); document.querySelector('#record-button small').textContent = 'Record'; showMeetingError('Recording stopped'); });
@@ -576,13 +663,23 @@ $('switch-camera-button').addEventListener('click', async () => {
 		showMeetingToast(error.name === 'OverconstrainedError' ? 'This device does not have that camera.' : 'Could not switch camera.', 'error');
 	}
 });
-$('hand-button').addEventListener('click', () => { handRaised = !handRaised; $('hand-button').classList.toggle('active', handRaised); document.querySelector('#hand-button small').textContent = handRaised ? 'Lower hand' : 'Raise hand'; socket.emit('hand-raise', handRaised); });
+$('hand-button').addEventListener('click', () => {
+	handRaised = !handRaised;
+	$('hand-button').classList.toggle('active', handRaised);
+	$('hand-button').querySelector('strong').textContent = handRaised ? 'Lower hand' : 'Raise hand';
+	const participant = participants.get(socket.id);
+	if (participant) participant.handRaised = handRaised;
+	document.querySelector(`#tile-${localTileId} .hand-indicator`)?.classList.toggle('visible', handRaised);
+	socket.emit('hand-raise', handRaised);
+});
 $('share-button').addEventListener('click', async () => {
 	if (screenStream) return stopSharing();
 	const getDisplayMedia = navigator.mediaDevices?.getDisplayMedia?.bind(navigator.mediaDevices) || navigator.getDisplayMedia?.bind(navigator);
 	if (!getDisplayMedia) return showMeetingError('This browser cannot start screen sharing. Other participants can still view a share started from a supported laptop browser.');
 	try {
 		screenStream = await getDisplayMedia({ video: true });
+		setActiveSpeaker(null);
+		videoGrid.classList.add('presentation-mode');
 		const track = screenStream.getVideoTracks()[0];
 		for (const { connection } of peers.values()) {
 			const sender = connection.getSenders().find((item) => item.track?.kind === 'video');
@@ -612,6 +709,8 @@ function stopSharing() {
 	}
 	screenStream?.getTracks().forEach((item) => item.stop());
 	screenStream = null;
+	setActiveSpeaker(null);
+	videoGrid.classList.remove('presentation-mode');
 	addVideo(localTileId, displayName, localStream, true);
 	$('share-button').classList.remove('active');
 	document.querySelector('#share-button small').textContent = 'Share screen';
@@ -753,6 +852,7 @@ function setAudioOnlyMode(enabled) {
 $('reactions-button').addEventListener('click', () => $('reaction-picker').classList.toggle('hidden'));
 document.querySelectorAll('#reaction-picker [data-reaction]').forEach((button) => button.addEventListener('click', () => {
 		const reaction = button.dataset.reaction;
+		showFloatingReaction(reaction, displayName, true);
 		socket.emit('reaction', reaction);
 		$('reaction-picker').classList.add('hidden');
 	}));
@@ -803,15 +903,18 @@ $('video-effect-select').addEventListener('change', (event) => {
 let captionRecognition;
 $('captions-toggle').addEventListener('change', (event) => {
 		const captionDisplay = $('caption-display');
+	$('settings-captions-toggle').checked = event.target.checked;
 		const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 		if (!event.target.checked) {
 			captionDisplay.classList.add('hidden');
+		captionDisplay.textContent = '';
 			captionRecognition?.stop();
 			return;
 		}
 		if (!Recognition) {
-			event.target.checked = false;
-			return showMeetingError('Live captions are not supported by this browser.');
+		captionDisplay.textContent = 'Live captions unavailable in this browser';
+		captionDisplay.classList.remove('hidden');
+		return;
 		}
 		captionDisplay.classList.remove('hidden');
 		captionRecognition = new Recognition();
@@ -821,7 +924,7 @@ $('captions-toggle').addEventListener('change', (event) => {
 			captionDisplay.textContent = [...resultEvent.results].map((result) => result[0].transcript).join(' ');
 		};
 		captionRecognition.onend = () => { if ($('captions-toggle').checked) captionRecognition.start(); };
-		captionRecognition.start();
+			captionRecognition.start();
 });
 
 $('email-invite-button').addEventListener('click', () => {
@@ -830,8 +933,28 @@ $('email-invite-button').addEventListener('click', () => {
 		window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Invite to ${currentRoom || 'Gather meeting'}`)}&body=${encodeURIComponent(`Join my meeting: ${meetingLink()}`)}`;
 });
 $('settings-button').addEventListener('click', () => {
-		setUtilityPanelOpen(false);
-		showMeetingError('Use your browser permissions to change camera and microphone devices, then rejoin.');
+	setUtilityPanelOpen(true);
+	$('utility-panel').classList.add('show-settings');
+});
+$('close-settings').addEventListener('click', () => $('utility-panel').classList.remove('show-settings'));
+$('settings-captions-toggle').addEventListener('change', (event) => {
+	$('captions-toggle').checked = event.target.checked;
+	$('captions-toggle').dispatchEvent(new Event('change'));
+});
+$('hide-video-tiles-toggle').addEventListener('change', (event) => {
+	hideVideoTiles = event.target.checked;
+	applyVideoTilePreference();
+});
+$('show-reactions-toggle').addEventListener('change', (event) => { showOtherReactions = event.target.checked; });
+$('reaction-animation-toggle').addEventListener('change', (event) => { animateReactions = event.target.checked; });
+$('settings-host-controls').addEventListener('click', () => {
+	if (!isHost) return showMeetingToast('Host controls are available to the host only.', 'error');
+	$('utility-panel').classList.remove('show-settings');
+	setUtilityPanelOpen(false);
+	setHostPanelOpen(true);
+});
+$('settings-feedback').addEventListener('click', () => {
+	window.location.href = `mailto:?subject=${encodeURIComponent('Gather meeting feedback')}&body=${encodeURIComponent(`Meeting: ${meetingLink()}`)}`;
 });
 $('report-button').addEventListener('click', () => $('report-section').classList.toggle('hidden'));
 $('send-report-button').addEventListener('click', () => {

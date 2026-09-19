@@ -88,6 +88,13 @@
 					<button id="tools-button" class="more-tile" type="button"><span class="more-icon">&#9881;</span><strong>Tools</strong></button>
 					<button id="report-button" class="more-tile" type="button"><span class="more-icon">&#9888;</span><strong>Report abuse</strong></button>
 				</div>
+				<section id="settings-section" class="settings-section hidden" aria-label="Meeting settings">
+					<div class="settings-heading"><div><p class="eyebrow">MEETING SETTINGS</p><h3>Settings</h3></div><button id="close-settings" class="icon-button" type="button" aria-label="Back to more options">&#8592;</button></div>
+					<div class="settings-group"><h4>VIDEO</h4><label class="settings-option"><span><strong>Don't show video in tiles</strong><small>Watch only presentations</small></span><input id="hide-video-tiles-toggle" type="checkbox"><i></i></label></div>
+					<div class="settings-group"><h4>GENERAL</h4><button id="settings-host-controls" class="settings-link" type="button"><span>Host controls</span><span>&#8250;</span></button><button id="settings-feedback" class="settings-link" type="button"><span>Send feedback</span><span>&#8250;</span></button></div>
+					<div class="settings-group"><h4>CAPTIONS</h4><label class="settings-option"><span><strong>Live captions</strong><small>Show captions in this call</small></span><input id="settings-captions-toggle" type="checkbox"><i></i></label><div class="settings-value"><span>Language of the call</span><strong>English (India)</strong></div></div>
+					<div class="settings-group"><h4>REACTIONS</h4><label class="settings-option"><span><strong>Show reactions from others</strong><small>When off, your own reactions still appear</small></span><input id="show-reactions-toggle" type="checkbox" checked><i></i></label><label class="settings-option"><span><strong>Animation</strong><small>Show floating reaction animations</small></span><input id="reaction-animation-toggle" type="checkbox" checked><i></i></label></div>
+				</section>
 				<div class="more-secondary-actions">
 					<button id="switch-camera-button" class="secondary-button compact-button" type="button">Switch camera</button>
 					<button id="fullscreenBtn" class="secondary-button compact-button" type="button">Fullscreen</button>
@@ -102,6 +109,7 @@
 				<section id="report-section" class="utility-section hidden"><label for="report-text">What went wrong?</label><textarea id="report-text" rows="3" maxlength="500" placeholder="Tell us what happened"></textarea><button id="send-report-button" class="primary-button compact-button" type="button">Send report</button></section>
 			</aside>
 			<div id="reaction-picker" class="reaction-picker hidden" aria-label="Reactions"><button type="button" data-reaction="&#128077;">&#128077;</button><button type="button" data-reaction="&#10084;&#65039;">&#10084;&#65039;</button><button type="button" data-reaction="&#128514;">&#128514;</button><button type="button" data-reaction="&#128558;">&#128558;</button><button type="button" data-reaction="&#128546;">&#128546;</button><button type="button" data-reaction="&#128079;">&#128079;</button><button type="button" data-reaction="&#127881;">&#127881;</button></div>
+			<div id="reaction-layer" class="reaction-layer" aria-live="polite"></div>
 			<div id="caption-display" class="caption-display hidden" aria-live="polite"></div>
 			<p id="meeting-error" class="meeting-error" role="alert"></p>
 		</section>

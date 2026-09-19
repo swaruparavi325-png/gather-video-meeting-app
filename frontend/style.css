@@ -70,6 +70,38 @@ body { overflow-x: hidden; }
 .more-icon { font-size: 21px; line-height: 1; }
 .more-tile strong, .more-wide-tile strong { font-size: 12px; }
 .more-secondary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 14px 0 2px; }
+.settings-section { display: none; overflow-y: auto; min-height: 0; }
+.utility-panel.show-settings .more-grid, .utility-panel.show-settings .more-secondary-actions, .utility-panel.show-settings > .utility-section { display: none; }
+.utility-panel.show-settings .settings-section { display: block; }
+.settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; }
+.settings-heading h3 { margin: 0; font: 700 22px 'Space Grotesk', sans-serif; }
+.settings-group { display: grid; gap: 4px; padding: 15px 0; border-top: 1px solid var(--line); }
+.settings-group h4 { margin: 0 0 5px; color: var(--muted); font: 700 10px 'Space Grotesk', sans-serif; letter-spacing: .12em; }
+.settings-option { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 52px; color: var(--ink) !important; cursor: pointer; }
+.settings-option span { display: grid; gap: 4px; }
+.settings-option strong { font-size: 13px; }
+.settings-option small { color: var(--muted); font-size: 11px; }
+.settings-option input { position: absolute; opacity: 0; pointer-events: none; }
+.settings-option i { position: relative; flex: 0 0 38px; width: 38px; height: 22px; border-radius: 20px; background: #cbd3cf; transition: background .18s ease; }
+.settings-option i::after { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; content: ''; box-shadow: 0 1px 3px rgba(23, 33, 38, .25); transition: transform .18s ease; }
+.settings-option input:checked + i { background: #82a735; }
+.settings-option input:checked + i::after { transform: translateX(16px); }
+.settings-value { display: flex; justify-content: space-between; gap: 15px; padding: 12px 0 3px; color: var(--muted); font-size: 12px; }
+.settings-value strong { color: var(--ink); font-size: 12px; }
+.settings-link { display: flex; justify-content: space-between; width: 100%; padding: 12px 0; background: transparent; color: var(--ink); text-align: left; font-size: 13px; }
+.reaction-layer { position: absolute; inset: 0; z-index: 7; overflow: hidden; pointer-events: none; }
+.floating-reaction { position: absolute; bottom: 42px; left: calc(50% + (var(--reaction-offset, 0) * 1px)); font-size: 30px; animation: reaction-float 2.8s ease-out forwards; }
+.static-reaction { animation: reaction-fade 1.8s ease-out forwards; }
+@keyframes reaction-float { 0% { opacity: 0; transform: translate(-50%, 20px) scale(.7); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -220px) scale(1.18); } }
+@keyframes reaction-fade { from { opacity: 1; } to { opacity: 0; } }
+.video-grid.active-speaker-mode { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 20%); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 12px; }
+.video-grid.active-speaker-mode .video-tile.main-speaker { grid-row: 1; grid-column: 1; min-height: 0; aspect-ratio: auto; opacity: 1; transform: scale(1); transition: opacity .2s ease, transform .2s ease; }
+.video-grid.active-speaker-mode .video-tile.speaker-thumbnail { grid-column: 2; min-height: 90px; aspect-ratio: 16 / 10; transform: scale(.98); transition: opacity .2s ease, transform .2s ease; }
+.video-grid.hide-video-tiles .video-tile:not(.presentation-tile) { display: none; }
+.video-grid.hide-video-tiles .video-tile.presentation-tile { display: block; }
+.video-grid.presentation-mode { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 20%); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 12px; }
+.video-grid.presentation-mode .video-tile.presentation-tile { grid-column: 1; grid-row: 1; min-height: 0; aspect-ratio: auto; }
+.video-grid.presentation-mode .video-tile:not(.presentation-tile) { grid-column: 2; min-height: 90px; aspect-ratio: 16 / 10; }
 .reaction-picker { position: absolute; right: 50%; bottom: 86px; z-index: 10; display: flex; gap: 4px; padding: 8px; border: 1px solid #dce3df; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(23, 33, 38, .2); transform: translateX(50%); }
 .reaction-picker button { width: 38px; height: 38px; border-radius: 50%; background: transparent; font-size: 22px; }
 .reaction-picker button:hover { background: #f1f8dd; }
