@@ -70,7 +70,8 @@ body { overflow-x: hidden; }
 .more-icon { font-size: 21px; line-height: 1; }
 .more-tile strong, .more-wide-tile strong { font-size: 12px; }
 .more-secondary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 14px 0 2px; }
-.settings-section { display: none; overflow-y: auto; min-height: 0; }
+.settings-section { display: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.utility-panel.show-settings { min-height: min(520px, calc(100dvh - 96px)); }
 .utility-panel.show-settings .more-grid, .utility-panel.show-settings .more-secondary-actions, .utility-panel.show-settings > .utility-section { display: none; }
 .utility-panel.show-settings .settings-section { display: block; }
 .settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; }
