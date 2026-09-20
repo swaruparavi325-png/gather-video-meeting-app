@@ -495,7 +495,7 @@ socket.on('waiting-queue', (queue) => {
 socket.on('host-status', (host) => {
 	isHost = host;
 	$('host-button').classList.toggle('hidden', !host);
-	$('host-panel').classList.toggle('hidden', !host);
+	$('host-panel').classList.add('hidden');
 	$('record-button').classList.toggle('hidden', !host);
 	renderWaitingQueue(pendingQueue);
 	if (host) {
@@ -934,9 +934,13 @@ $('email-invite-button').addEventListener('click', () => {
 });
 $('settings-button').addEventListener('click', () => {
 	setUtilityPanelOpen(true);
+	$('settings-section').classList.remove('hidden');
 	$('utility-panel').classList.add('show-settings');
 });
-$('close-settings').addEventListener('click', () => $('utility-panel').classList.remove('show-settings'));
+$('close-settings').addEventListener('click', () => {
+	$('settings-section').classList.add('hidden');
+	$('utility-panel').classList.remove('show-settings');
+});
 $('settings-captions-toggle').addEventListener('change', (event) => {
 	$('captions-toggle').checked = event.target.checked;
 	$('captions-toggle').dispatchEvent(new Event('change'));
