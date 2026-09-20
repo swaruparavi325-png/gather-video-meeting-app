@@ -26,6 +26,7 @@ let activeSpeakerId = null;
 let activeSpeakerCandidate = null;
 let activeSpeakerCandidateSince = 0;
 let activeSpeakerLastHeard = 0;
+let activeSpeakerLastSwitch = 0;
 let hideVideoTiles = false;
 let showOtherReactions = true;
 let animateReactions = true;
@@ -88,7 +89,9 @@ function setupAudioAnalyser(id, video, stream, local) {
 
 function setActiveSpeaker(id) {
 	if (screenStream) return;
+	if (activeSpeakerId === id) return;
 	activeSpeakerId = id;
+	activeSpeakerLastSwitch = performance.now();
 	videoGrid.classList.toggle('active-speaker-mode', Boolean(id));
 	videoGrid.querySelectorAll('.video-tile').forEach((tile) => {
 		const tileId = tile.id.slice(5);
@@ -98,7 +101,7 @@ function setActiveSpeaker(id) {
 }
 
 function updateActiveSpeaker() {
-	if (!screenStream && audioAnalyzers.size) {
+	if (!screenStream && audioAnalyzers.size && participants.size > 1) {
 		let loudestId = null;
 		let loudestLevel = 0;
 		for (const [id, entry] of audioAnalyzers) {
@@ -110,14 +113,28 @@ function updateActiveSpeaker() {
 			if (level > loudestLevel) { loudestLevel = level; loudestId = id; }
 		}
 		const now = performance.now();
-		if (loudestId && loudestLevel > 0.045) {
+		const currentLevel = activeSpeakerId ? (() => {
+			const current = audioAnalyzers.get(activeSpeakerId);
+			if (!current) return 0;
+			current.analyser.getByteTimeDomainData(current.data);
+			let sum = 0;
+			for (const value of current.data) { const normalized = (value - 128) / 128; sum += normalized * normalized; }
+			return Math.sqrt(sum / current.data.length);
+		})() : 0;
+		if (loudestId && loudestLevel > 0.055) {
 			activeSpeakerLastHeard = now;
-			if (activeSpeakerCandidate !== loudestId) { activeSpeakerCandidate = loudestId; activeSpeakerCandidateSince = now; }
-			if (now - activeSpeakerCandidateSince > 350) setActiveSpeaker(loudestId);
-		} else if (activeSpeakerId && now - activeSpeakerLastHeard > 900) {
+			if (activeSpeakerId === loudestId) {
+				activeSpeakerCandidate = null;
+			} else if (loudestLevel > currentLevel + 0.018 || !activeSpeakerId) {
+				if (activeSpeakerCandidate !== loudestId) { activeSpeakerCandidate = loudestId; activeSpeakerCandidateSince = now; }
+				if (now - activeSpeakerCandidateSince > 900 && now - activeSpeakerLastSwitch > 1400) setActiveSpeaker(loudestId);
+			}
+		} else if (activeSpeakerId && now - activeSpeakerLastHeard > 3200) {
 			activeSpeakerCandidate = null;
 			setActiveSpeaker(null);
 		}
+	} else if (activeSpeakerId && participants.size <= 1) {
+		setActiveSpeaker(null);
 	}
 	requestAnimationFrame(updateActiveSpeaker);
 }
